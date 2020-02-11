@@ -1,0 +1,120 @@
+<settings>
+    <setting propertyKey="@Properties.ebirdLocale" title="@Strings.localeTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.ebird_en</listEntry>
+            <listEntry value="1">@Strings.ebird_en_AU</listEntry>
+            <listEntry value="2">@Strings.ebird_en_IN</listEntry>
+            <listEntry value="3">@Strings.ebird_en_IOC</listEntry>
+            <listEntry value="4">@Strings.ebird_en_HAW</listEntry>
+            <listEntry value="5">@Strings.ebird_en_KE</listEntry>
+            <listEntry value="6">@Strings.ebird_en_MY</listEntry>
+            <listEntry value="7">@Strings.ebird_en_NZ</listEntry>
+            <listEntry value="8">@Strings.ebird_en_PH</listEntry>
+            <listEntry value="9">@Strings.ebird_en_ZA</listEntry>
+            <listEntry value="10">@Strings.ebird_en_AE</listEntry>
+            <listEntry value="11">@Strings.ebird_en_UK</listEntry>
+            <listEntry value="12">@Strings.ebird_en_US</listEntry>
+            <listEntry value="13">@Strings.ebird_bg</listEntry>
+            <listEntry value="14">@Strings.ebird_zh</listEntry>
+            <listEntry value="15">@Strings.ebird_zh_SIM</listEntry>
+            <listEntry value="16">@Strings.ebird_hr</listEntry>
+            <listEntry value="17">@Strings.ebird_cz</listEntry>
+            <listEntry value="18">@Strings.ebird_da</listEntry>
+            <listEntry value="19">@Strings.ebird_nl</listEntry>
+            <listEntry value="20">@Strings.ebird_de</listEntry>
+            <listEntry value="21">@Strings.ebird_fo</listEntry>
+            <listEntry value="22">@Strings.ebird_fi</listEntry>
+            <listEntry value="23">@Strings.ebird_fr</listEntry>
+            <listEntry value="24">@Strings.ebird_fr_AOU</listEntry>
+            <listEntry value="25">@Strings.ebird_fr_CA</listEntry>
+            <listEntry value="26">@Strings.ebird_fr_GP</listEntry>
+            <listEntry value="27">@Strings.ebird_fr_HT</listEntry>
+            <listEntry value="28">@Strings.ebird_ht_HT</listEntry>
+            <listEntry value="29">@Strings.ebird_iw</listEntry>
+            <listEntry value="30">@Strings.ebird_hu</listEntry>
+            <listEntry value="31">@Strings.ebird_id</listEntry>
+            <listEntry value="32">@Strings.ebird_is</listEntry>
+            <listEntry value="33">@Strings.ebird_it</listEntry>
+            <listEntry value="34">@Strings.ebird_ja</listEntry>
+            <listEntry value="35">@Strings.ebird_ko</listEntry>
+            <listEntry value="36">@Strings.ebird_lv</listEntry>
+            <listEntry value="37">@Strings.ebird_lt</listEntry>
+            <listEntry value="38">@Strings.ebird_ml</listEntry>
+            <listEntry value="39">@Strings.ebird_mn</listEntry>
+            <listEntry value="40">@Strings.ebird_no</listEntry>
+            <listEntry value="41">@Strings.ebird_pl</listEntry>
+            <listEntry value="42">@Strings.ebird_pt_BR</listEntry>
+            <listEntry value="43">@Strings.ebird_pt_PT</listEntry>
+            <listEntry value="44">@Strings.ebird_ru</listEntry>
+            <listEntry value="45">@Strings.ebird_sr</listEntry>
+            <listEntry value="46">@Strings.ebird_sl</listEntry>
+            <listEntry value="47">@Strings.ebird_es</listEntry>
+            <listEntry value="48">@Strings.ebird_es_AR</listEntry>
+            <listEntry value="49">@Strings.ebird_es_CL</listEntry>
+            <listEntry value="50">@Strings.ebird_es_CR</listEntry>
+            <listEntry value="51">@Strings.ebird_es_CU</listEntry>
+            <listEntry value="52">@Strings.ebird_es_DO</listEntry>
+            <listEntry value="53">@Strings.ebird_es_EC</listEntry>
+            <listEntry value="54">@Strings.ebird_es_ES</listEntry>
+            <listEntry value="55">@Strings.ebird_es_MX</listEntry>
+            <listEntry value="56">@Strings.ebird_es_PA</listEntry>
+            <listEntry value="57">@Strings.ebird_es_PR</listEntry>
+            <listEntry value="58">@Strings.ebird_es_UY</listEntry>
+            <listEntry value="59">@Strings.ebird_es_VE</listEntry>
+            <listEntry value="60">@Strings.ebird_sv</listEntry>
+            <listEntry value="61">@Strings.ebird_th</listEntry>
+            <listEntry value="62">@Strings.ebird_tr</listEntry>
+            <listEntry value="63">@Strings.ebird_uk</listEntry>
+        </settingConfig>
+    </setting>
+
+<!-- 
+    <setting propertyKey="@Properties.fontSize" title="@Strings.fontSizeTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.fontXTiny</listEntry>
+            <listEntry value="1">@Strings.fontTiny</listEntry>
+            <listEntry value="2">@Strings.fontSmall</listEntry>
+        </settingConfig>
+    </setting>
+-->
+    <setting propertyKey="@Properties.searchRadius" title="@Strings.searchRadiusTitle">
+        <settingConfig type="list">
+            <listEntry value="5">@Strings.km5</listEntry>
+            <listEntry value="10">@Strings.km10</listEntry>
+            <listEntry value="15">@Strings.km15</listEntry>
+            <listEntry value="20">@Strings.km20</listEntry>
+            <listEntry value="25">@Strings.km25</listEntry>
+            <listEntry value="30">@Strings.km30</listEntry>
+            <listEntry value="35">@Strings.km35</listEntry>
+            <listEntry value="40">@Strings.km40</listEntry>
+            <listEntry value="45">@Strings.km45</listEntry>
+            <listEntry value="50">@Strings.km50</listEntry>
+        </settingConfig>
+    </setting>
+
+    <setting propertyKey="@Properties.daysBack" title="@Strings.daysBackTitle">
+        <settingConfig type="list">
+            <listEntry value="1">@Strings.day1</listEntry>
+            <listEntry value="3">@Strings.day3</listEntry>
+            <listEntry value="5">@Strings.day5</listEntry>
+            <listEntry value="7">@Strings.day7</listEntry>
+            <listEntry value="10">@Strings.day10</listEntry>
+            <listEntry value="14">@Strings.day14</listEntry>
+            <listEntry value="21">@Strings.day21</listEntry>
+            <listEntry value="30">@Strings.day30</listEntry>
+        </settingConfig>
+    </setting>
+<!-- 
+    <setting propertyKey="@Properties.maxResult" title="@Strings.maxResultTitle">
+        <settingConfig type="list">
+            <listEntry value="5">@Strings.bird5</listEntry>
+            <listEntry value="10">@Strings.bird10</listEntry>
+            <listEntry value="20">@Strings.bird20</listEntry>
+            <listEntry value="30">@Strings.bird30</listEntry>
+            <listEntry value="50">@Strings.bird50</listEntry>
+            <listEntry value="100">@Strings.bird100</listEntry>
+            <listEntry value="150">@Strings.bird150</listEntry>
+        </settingConfig>
+    </setting>
+ -->
+</settings>

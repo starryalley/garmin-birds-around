@@ -1,0 +1,7 @@
+<properties>
+    <property id="ebirdLocale" type="number">0</property>
+    <property id="fontSize" type="number">1</property>
+    <property id="searchRadius" type="number">10</property>
+    <property id="daysBack" type="number">14</property>
+    <property id="maxResult" type="number">100</property>
+</properties>
