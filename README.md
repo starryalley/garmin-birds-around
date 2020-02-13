@@ -3,6 +3,22 @@
 
 This is a [Garmin Connect IQ](https://apps.garmin.com/en-US/) watch widget which uses [eBird](https://ebird.org/home) data to list possible bird species around your current location.
 
+
+## Download
+
+[<img src="https://developer.garmin.com/img/connect-iq/brand/available-badge.svg"
+      alt="Available on Garmin Connect IQ"
+      height="90">](https://apps.garmin.com/en-US/apps/c2922026-a8c1-4ac3-895a-7e5f96d3fbf9)
+
+
+## Screenshots
+
+![Screenshots](screenshots/f6p_1.png)
+![Screenshots](screenshots/f6p_2.png)
+![Screenshots](screenshots/f6p_3.png)
+
+## Functions
+
 You can see the list of bird species from observations within 30 days and within 50km radius (configurable) of your location. The bird's scentific name, observed date and location are also shown in detail page.
 
 
