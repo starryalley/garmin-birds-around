@@ -43,12 +43,10 @@ class garminbirdingGlanceView extends Ui.GlanceView {
         } else {
             var m = new Time.Moment(lastFetchedContentAt);
             var date = Time.Gregorian.info(m, Time.FORMAT_SHORT);
-            var dateStr = format("$1$-$2$-$3$ $4$:$5$",[
+            var dateStr = format("$1$-$2$-$3$",[
                 date.year,
                 date.month.format("%02d"),
-                date.day,
-                date.hour,
-                date.min.format("%02d")]);
+                date.day]);
 
             if (expired) {
                 dc.drawText(0, 0, Gfx.FONT_TINY, "*" + speciesCount + " ", Gfx.TEXT_JUSTIFY_LEFT);
@@ -61,7 +59,8 @@ class garminbirdingGlanceView extends Ui.GlanceView {
                 var offset = dc.getTextWidthInPixels(speciesCount + " ", Gfx.FONT_TINY);
                 dc.drawText(offset, textHeightTiny-textHeightXTiny, Gfx.FONT_XTINY, "Bird Species Around", Gfx.TEXT_JUSTIFY_LEFT);
                 dc.setColor(0xbdffc9, Gfx.COLOR_TRANSPARENT);
-                dc.drawText(0, textHeightTiny, Gfx.FONT_XTINY, "Fetched: " + dateStr, Gfx.TEXT_JUSTIFY_LEFT);
+                var infoText = Storage.getValue("searchRadius") + "km " + Storage.getValue("daysBack") + "d " + dateStr;
+                dc.drawText(0, textHeightTiny, Gfx.FONT_XTINY, infoText, Gfx.TEXT_JUSTIFY_LEFT);
             }
         }
     }

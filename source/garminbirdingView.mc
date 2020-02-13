@@ -8,9 +8,9 @@ using Toybox.Application.Storage; // CIQ 2.4
 (:glance)
 class garminbirdingView extends WatchUi.View {
     hidden const ebirdToken = "i633sf60gr8a";
-    hidden const POLL_PERIOD = 5 * 1000; //ms
+
     hidden var statusText = "No Info";
-    hidden var font = Graphics.FONT_XTINY;
+    hidden var font = Graphics.FONT_TINY;
 
     hidden var locationTimer;
     hidden var lon = null;
@@ -34,11 +34,22 @@ class garminbirdingView extends WatchUi.View {
     hidden var searchRadius;
     hidden var daysBack;
 
+    // TODO: switch to this state machine
+    enum {
+        MODE_FETCHING,  // when fetching data from internet
+        MODE_ERROR,     // error state
+        MODE_LIST,      // the bird list screen
+        MODE_SELECT,    // the bird list screen with user selection
+        MODE_DETAIL     // the bird detail screen
+    }
+
     function initialize() {
         View.initialize();
         locationTimer = new Timer.Timer();
     }
 
+    // convert property value (number) to actual locale string used for eBird.
+    // the property/settings in CIQ doesn't allow string type list which is absurd.
     function getLocale() {
         var locale = Application.getApp().getProperty("ebirdLocale");
         var l = "en";
@@ -111,6 +122,7 @@ class garminbirdingView extends WatchUi.View {
         return l;
     }
 
+    // get the visible screenWidth in pixels at position Y, depending on screen shape
     function getScreenWidthAtY(y) {
         if (screenShape == System.SCREEN_SHAPE_RECTANGLE) {
             return screenWidth;
@@ -119,6 +131,7 @@ class garminbirdingView extends WatchUi.View {
         return 2 * Math.sqrt(Math.pow(r, 2) - Math.pow(r-y, 2));
     }
 
+    // retrieve saved location if it is still valid (currently set to less than 3 days)
     function getSavedLocation() {
         /*
         var info = Activity.getActivityInfo();
@@ -157,6 +170,7 @@ class garminbirdingView extends WatchUi.View {
         return false;
     }
 
+    // requesting ebird for recent observations at current lat/lon
     function requestRecentObs(dist, count, back, notable) {
         if (lon == null || lat == null) {
             System.println("No location, not requesting ebird");
@@ -184,6 +198,10 @@ class garminbirdingView extends WatchUi.View {
         // invalidate saved content
         Storage.setValue("pageContentLastUpdate", 0);
         Storage.setValue("speciesCount", 0);
+        // save current search radius and daysBack
+        Storage.setValue("searchRadius", dist);
+        Storage.setValue("daysBack", back);
+
         var params = {
             "lat" => lat,
             "lng" => lon,
@@ -212,6 +230,7 @@ class garminbirdingView extends WatchUi.View {
         );
     }
 
+    // requesting bird taxonomy data so we know how to group birds in the bird list
     function requestTaxonomy(speciesCodes) {
         //https://api.ebird.org/v2/ref/taxonomy/ebird?species=hoocro1&fmt=json --header 'X-eBirdApiToken: i633sf60gr8a'
         var speciesList = "";
@@ -234,6 +253,7 @@ class garminbirdingView extends WatchUi.View {
         );
     }
 
+    // just a function to deduplicate based on bird scentific name
     function removeDuplicates(birdList) {
         var results = [];
         var species = {};
@@ -248,6 +268,8 @@ class garminbirdingView extends WatchUi.View {
         return results;
     }
 
+    // group currentBirds based on its family, returning a dictionary whose key is family name
+    // and value is array of birds
     function createTaxonomy() {
         var birdsTaxonomy = {}; // familyComName => [birds]
         for (var i = 0; i < currentBirds.size(); i++) {
@@ -262,6 +284,7 @@ class garminbirdingView extends WatchUi.View {
         return birdsTaxonomy;
     }
 
+    // callback for ebird observation request
     function onReceiveObs(responseCode, json) {
         System.println("obs response:" + responseCode);
         if (responseCode == Comm.NETWORK_RESPONSE_TOO_LARGE) {
@@ -337,6 +360,7 @@ class garminbirdingView extends WatchUi.View {
         WatchUi.requestUpdate();
     }
 
+    // callback for ebird taxonomy request
     function onReceiveTaxonomy(responseCode, json) {
         System.println("taxonomy response:" + responseCode);
         if (responseCode == 200) {
@@ -362,9 +386,7 @@ class garminbirdingView extends WatchUi.View {
         WatchUi.requestUpdate();
     }
 
-    // Load your resources here
     function onLayout(dc) {
-        //setLayout(Rez.Layouts.MainLayout(dc));
         screenHeight = dc.getHeight();
         screenWidth = dc.getWidth();
         screenShape = System.getDeviceSettings().screenShape;
@@ -424,48 +446,48 @@ class garminbirdingView extends WatchUi.View {
             if (f) {
                 var first = bird["name"].substring(0, f);
                 var second = bird["name"].substring(f+1, bird["name"].length());
-                dc.drawText(dc.getWidth()/2, startOffset, font, first, Graphics.TEXT_JUSTIFY_CENTER);
-                dc.drawText(dc.getWidth()/2, startOffset+squeezedTextHeight, font, second, Graphics.TEXT_JUSTIFY_CENTER);
+                dc.drawText(screenWidth/2, startOffset, font, first, Graphics.TEXT_JUSTIFY_CENTER);
+                dc.drawText(screenWidth/2, startOffset+squeezedTextHeight, font, second, Graphics.TEXT_JUSTIFY_CENTER);
             } else {
                 // can't be properly split
-                dc.drawText(dc.getWidth()/2, startOffset+squeezedTextHeight, font, bird["name"], Graphics.TEXT_JUSTIFY_CENTER);
+                dc.drawText(screenWidth/2, startOffset+squeezedTextHeight, font, bird["name"], Graphics.TEXT_JUSTIFY_CENTER);
             }
         } else {
-            dc.drawText(dc.getWidth()/2, startOffset+squeezedTextHeight, font, bird["name"], Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(screenWidth/2, startOffset+squeezedTextHeight, font, bird["name"], Graphics.TEXT_JUSTIFY_CENTER);
         }
         var y = startOffset + textHeight + squeezedTextHeight;
-        dc.drawLine(0, y, dc.getWidth(), y);
+        dc.drawLine(0, y, screenWidth, y);
 
         // detials title
         dc.setColor(0xbdffc9, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(dc.getWidth()/2, y + textHeight * 0, font, "Scientific Name", Graphics.TEXT_JUSTIFY_CENTER);
-        dc.drawText(dc.getWidth()/2, y + textHeight * 2, font, "Last Observed", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(screenWidth/2, y + textHeight * 0, font, "Scientific Name", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(screenWidth/2, y + textHeight * 2, font, "Last Observed", Graphics.TEXT_JUSTIFY_CENTER);
         var locTitle = "Location";
         if (bird.hasKey("d")) {
             locTitle += " (" + bird["d"].format("%.1f") + "km)";
         }
-        dc.drawText(dc.getWidth()/2, y + textHeight * 4, font, locTitle, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(screenWidth/2, y + textHeight * 4, font, locTitle, Graphics.TEXT_JUSTIFY_CENTER);
         if (y + textHeight * 8 < screenHeight) {
-            dc.drawText(dc.getWidth()/2, y + textHeight * 6, font, "Count", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(screenWidth/2, y + textHeight * 6, font, "Count", Graphics.TEXT_JUSTIFY_CENTER);
         }
         // details content
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         if (dc.getTextWidthInPixels(bird["sci"], font) > getScreenWidthAtY(y + textHeight * 1)) {
-            dc.drawText(dc.getWidth()/2, y + textHeight * 1, Graphics.FONT_XTINY, bird["sci"], Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(screenWidth/2, y + textHeight * 1, Graphics.FONT_XTINY, bird["sci"], Graphics.TEXT_JUSTIFY_CENTER);
         } else {
-            dc.drawText(dc.getWidth()/2, y + textHeight * 1, font, bird["sci"], Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(screenWidth/2, y + textHeight * 1, font, bird["sci"], Graphics.TEXT_JUSTIFY_CENTER);
         }
-        dc.drawText(dc.getWidth()/2, y + textHeight * 3, font, bird["dt"], Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(screenWidth/2, y + textHeight * 3, font, bird["dt"], Graphics.TEXT_JUSTIFY_CENTER);
         if (dc.getTextWidthInPixels(bird["loc"], font) > getScreenWidthAtY(y + textHeight * 5)) {
-            dc.drawText(dc.getWidth()/2, y + textHeight * 5, Graphics.FONT_XTINY, splitString(bird["loc"]), Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(screenWidth/2, y + textHeight * 5, Graphics.FONT_XTINY, splitString(bird["loc"]), Graphics.TEXT_JUSTIFY_CENTER);
         } else {
-            dc.drawText(dc.getWidth()/2, y + textHeight * 5, font, bird["loc"], Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(screenWidth/2, y + textHeight * 5, font, bird["loc"], Graphics.TEXT_JUSTIFY_CENTER);
         }
         if (y + textHeight * 8 < screenHeight) {
             if (bird["ct"] == null) {
-                dc.drawText(dc.getWidth()/2, y + textHeight * 7, font, "Not available", Graphics.TEXT_JUSTIFY_CENTER);
+                dc.drawText(screenWidth/2, y + textHeight * 7, font, "Not available", Graphics.TEXT_JUSTIFY_CENTER);
             } else {
-                dc.drawText(dc.getWidth()/2, y + textHeight * 7, font, bird["ct"], Graphics.TEXT_JUSTIFY_CENTER);
+                dc.drawText(screenWidth/2, y + textHeight * 7, font, bird["ct"], Graphics.TEXT_JUSTIFY_CENTER);
             }
         }
     }
@@ -475,7 +497,7 @@ class garminbirdingView extends WatchUi.View {
         if (page >= pageContents.size()) {
             System.println("Showing centered status text:" + statusText);
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(dc.getWidth()/2, dc.getHeight()/2, Graphics.FONT_TINY, statusText, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            dc.drawText(screenWidth/2, screenHeight/2, Graphics.FONT_TINY, statusText, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
             return;
         }
 
@@ -483,15 +505,15 @@ class garminbirdingView extends WatchUi.View {
             var info = pageContents[page][i];
             if (info.hasKey("fam") && info["fam"]) {
                 dc.setColor(0xe1ffbd, Graphics.COLOR_TRANSPARENT);
-                dc.drawText(dc.getWidth()/2, posY, font, info["name"], Graphics.TEXT_JUSTIFY_CENTER);
+                dc.drawText(screenWidth/2, posY, font, info["name"], Graphics.TEXT_JUSTIFY_CENTER);
                 var textWidth = dc.getTextWidthInPixels(info["name"], font);
-                var textOffset = (dc.getWidth()-textWidth)/2;
-                //dc.drawLine(textOffset, posY, dc.getWidth()-textOffset, posY);
+                var textOffset = (screenWidth-textWidth)/2;
+                //dc.drawLine(textOffset, posY, screenWidth-textOffset, posY);
                 var round = 10;
                 dc.drawRoundedRectangle(textOffset-round/2, posY, textWidth + round, textHeight, round);
             } else {
                 dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-                dc.drawText(dc.getWidth()/2, posY, font, info["name"], Graphics.TEXT_JUSTIFY_CENTER);
+                dc.drawText(screenWidth/2, posY, font, info["name"], Graphics.TEXT_JUSTIFY_CENTER);
                 //pageContents[page][i]["width"] = dc.getTextWidthInPixels(info["name"], font);
             }
             posY += textHeight;
@@ -503,14 +525,14 @@ class garminbirdingView extends WatchUi.View {
             var tinyHeight = dc.getFontHeight(Graphics.FONT_XTINY);
             // print total species count
             dc.setColor(0xa3ffe2, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(dc.getWidth()/2, textHeight-tinyHeight, Graphics.FONT_XTINY, "Species:" + speciesCount, Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(screenWidth/2, textHeight-tinyHeight, Graphics.FONT_XTINY, "Species:" + speciesCount, Graphics.TEXT_JUSTIFY_CENTER);
             // print current location
-            var location = lat.format("%.5f") + ", " + lon.format("%.5f");
-            dc.setColor(0xa3ffe2, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(dc.getWidth()/2, dc.getHeight() - tinyHeight*2 + tinyHeight/3, Graphics.FONT_XTINY, location, Graphics.TEXT_JUSTIFY_CENTER);
+            //var location = lat.format("%.5f") + ", " + lon.format("%.5f");
+            //dc.setColor(0xa3ffe2, Graphics.COLOR_TRANSPARENT);
+            //dc.drawText(screenWidth/2, screenHeight - tinyHeight*2 + tinyHeight/3, Graphics.FONT_XTINY, location, Graphics.TEXT_JUSTIFY_CENTER);
             // print current/total page
             dc.setColor(0xa3ffe2, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(dc.getWidth()/2, dc.getHeight() - tinyHeight, Graphics.FONT_XTINY, (page + 1) + "/" + pageContents.size(), Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(screenWidth/2, screenHeight - tinyHeight, Graphics.FONT_XTINY, (page + 1) + "/" + pageContents.size(), Graphics.TEXT_JUSTIFY_CENTER);
         }
     }
 
@@ -523,7 +545,7 @@ class garminbirdingView extends WatchUi.View {
         var round = 10;
         System.println("selected:" + selected + ", total item on page " + page + ": " + pageContents[page].size());
         var textWidth = dc.getTextWidthInPixels(pageContents[page][selected]["name"], font);
-        var x = (dc.getWidth() - textWidth - round)/2;
+        var x = (screenWidth - textWidth - round)/2;
         dc.drawRoundedRectangle(x, (selected + 1) * textHeight, textWidth + round, textHeight, round);
     }
 
@@ -662,7 +684,7 @@ class garminbirdingView extends WatchUi.View {
         lon = myLocation[1];
         if (lon < -180 || lon > 180 || lat < -90 || lat > 90) {
             System.println("Invalid GPS location received, let's re-do it in 5 sec");
-            locationTimer.start(method(:onTimer), POLL_PERIOD, false);
+            locationTimer.start(method(:onTimer), 5 * 1000, false);
             return;
         }
         Storage.setValue("latitude", lat);
@@ -776,18 +798,16 @@ class garminbirdingView extends WatchUi.View {
     // the state of this View and prepare it to be shown. This includes
     // loading resources into memory.
     function onShow() {
-        //locationTimer.start(method(:onTimer), POLL_PERIOD, true);
         System.println("onShow()");
-        onTimer();
         searchRadius = Application.getApp().getProperty("searchRadius");
         daysBack = Application.getApp().getProperty("daysBack");
+        onTimer();
     }
 
     // Called when this View is removed from the screen. Save the
     // state of this View here. This includes freeing resources from
     // memory.
     function onHide() {
-        //locationTimer.stop();
     }
 
 }
