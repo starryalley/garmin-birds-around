@@ -104,17 +104,4 @@
             <listEntry value="30">@Strings.day30</listEntry>
         </settingConfig>
     </setting>
-<!-- 
-    <setting propertyKey="@Properties.maxResult" title="@Strings.maxResultTitle">
-        <settingConfig type="list">
-            <listEntry value="5">@Strings.bird5</listEntry>
-            <listEntry value="10">@Strings.bird10</listEntry>
-            <listEntry value="20">@Strings.bird20</listEntry>
-            <listEntry value="30">@Strings.bird30</listEntry>
-            <listEntry value="50">@Strings.bird50</listEntry>
-            <listEntry value="100">@Strings.bird100</listEntry>
-            <listEntry value="150">@Strings.bird150</listEntry>
-        </settingConfig>
-    </setting>
- -->
 </settings>

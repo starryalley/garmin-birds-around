@@ -18,9 +18,6 @@ class garminbirdingSummaryView extends Ui.View {
         Ui.requestUpdate();
     }
 
-    function onHide() {
-    }
-
     function onUpdate(dc) {
         dc.setColor(Gfx.COLOR_TRANSPARENT, Gfx.COLOR_BLACK);
         dc.clear();

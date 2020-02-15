@@ -14,13 +14,6 @@ class garminbirdingGlanceView extends Ui.GlanceView {
         mainview = view;
     }
 
-    function onShow() {
-        Sys.println("Glance view onShow()");
-    }
-
-    function onHide() {
-    }
-
     function onUpdate(dc) {
         var width = dc.getWidth();
         var height = dc.getHeight();

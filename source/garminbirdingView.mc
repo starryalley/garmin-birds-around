@@ -7,7 +7,7 @@ using Toybox.Application.Storage; // CIQ 2.4
 
 (:glance)
 class garminbirdingView extends WatchUi.View {
-    hidden const ebirdToken = "i633sf60gr8a";
+    hidden const ebirdToken = "API_TOKEN HERE"; // put your eBird API token here
 
     hidden var statusText = "No Info";
     hidden var font = Graphics.FONT_TINY;
@@ -34,6 +34,7 @@ class garminbirdingView extends WatchUi.View {
     hidden var searchRadius;
     hidden var daysBack;
 
+    /*
     // TODO: switch to this state machine
     enum {
         MODE_FETCHING,  // when fetching data from internet
@@ -42,6 +43,7 @@ class garminbirdingView extends WatchUi.View {
         MODE_SELECT,    // the bird list screen with user selection
         MODE_DETAIL     // the bird detail screen
     }
+    */
 
     function initialize() {
         View.initialize();
@@ -171,7 +173,7 @@ class garminbirdingView extends WatchUi.View {
     }
 
     // requesting ebird for recent observations at current lat/lon
-    function requestRecentObs(dist, count, back, notable) {
+    function requestRecentObs(dist, back, notable) {
         if (lon == null || lat == null) {
             System.println("No location, not requesting ebird");
             return;
@@ -210,14 +212,10 @@ class garminbirdingView extends WatchUi.View {
             "back" => back,
             "sppLocale" => locale,//https://support.ebird.org/support/solutions/articles/48000804865-bird-names-in-ebird
         };
-        if (count > 0) {
-            params["maxResults"] = count;
-        }
         var url = "https://api.ebird.org/v2/data/obs/geo/recent";
         if (notable) {
             url = "https://api.ebird.org/v2/data/obs/geo/recent/notable";
         }
-        //https://api.ebird.org/v2/data/obs/geo/recent?lat=-37.826&lng=145.002&sort=species' --header 'X-eBirdApiToken: i633sf60gr8a'
         Comm.makeWebRequest(
             url,
             params,
@@ -232,7 +230,6 @@ class garminbirdingView extends WatchUi.View {
 
     // requesting bird taxonomy data so we know how to group birds in the bird list
     function requestTaxonomy(speciesCodes) {
-        //https://api.ebird.org/v2/ref/taxonomy/ebird?species=hoocro1&fmt=json --header 'X-eBirdApiToken: i633sf60gr8a'
         var speciesList = "";
         for (var i = 0; i < speciesCodes.size(); i++) {
             speciesList += speciesCodes[i] + ",";
@@ -243,6 +240,7 @@ class garminbirdingView extends WatchUi.View {
             {
                 "fmt" => "json",
                 "species" => speciesList,
+                "locale" => getLocale(),
             },
             {
                 :method => Comm.HTTP_REQUEST_METHOD_GET,
@@ -287,42 +285,22 @@ class garminbirdingView extends WatchUi.View {
     // callback for ebird observation request
     function onReceiveObs(responseCode, json) {
         System.println("obs response:" + responseCode);
-        if (responseCode == Comm.NETWORK_RESPONSE_TOO_LARGE) {
+        if (responseCode == Comm.NETWORK_RESPONSE_TOO_LARGE ||
+                Comm has :NETWORK_RESPONSE_OUT_OF_MEMORY && responseCode == Comm.NETWORK_RESPONSE_OUT_OF_MEMORY) {
             if (searchRadius >= 10) {
                 searchRadius -= 5;
             } else if (searchRadius >= 5) {
                 searchRadius -= 1;
             } else if (searchRadius >= 1) {
                 System.println("Results too big!");
-                statusText = "Results too big!";
+                statusText = "Too many results\nReduce radius/days";
                 WatchUi.requestUpdate();
                 return;
             }
             System.println("Results too big, reducing radius from " + Application.getApp().getProperty("searchRadius") + " to " + searchRadius);
-            requestRecentObs(searchRadius, -1, Application.getApp().getProperty("daysBack"), false);
+            requestRecentObs(searchRadius, Application.getApp().getProperty("daysBack"), false);
             statusText = "Requesting eBird\nRadius=" + searchRadius + "km";
-            WatchUi.requestUpdate();
-            return;
-        }
-        if (Comm has :NETWORK_RESPONSE_OUT_OF_MEMORY && responseCode == Comm.NETWORK_RESPONSE_OUT_OF_MEMORY) {
-            if (searchRadius >= 10) {
-                searchRadius -= 5;
-            } else if (searchRadius >= 5) {
-                searchRadius -= 1;
-            } else if (searchRadius >= 1) {
-                System.println("Results out of memory!");
-                statusText = "Out of memory!";
-                WatchUi.requestUpdate();
-                return;
-            }
-            System.println("Results out of memory, reducing radius from " + Application.getApp().getProperty("searchRadius") + " to " + searchRadius);
-            requestRecentObs(searchRadius, -1, Application.getApp().getProperty("daysBack"), false);
-            statusText = "Requesting eBird\nRadius=" + searchRadius + "km";
-            WatchUi.requestUpdate();
-            return;
-        }
-
-        if (responseCode == 200) {
+        } else if (responseCode == 200) {
             //System.println("Receiving " + json.size() + " results");
             if (json.size() == 0) {
                 if (daysBack <= 10) {
@@ -336,21 +314,16 @@ class garminbirdingView extends WatchUi.View {
                     return;
                 }
                 System.println("No results, increasing daysBack from " + Application.getApp().getProperty("daysBack") + " to " + daysBack);
-                requestRecentObs(searchRadius, -1, daysBack, false);
-                statusText = "Requesting eBird\nDaysBack=" + daysBack;
+                requestRecentObs(searchRadius, daysBack, false);
+                statusText = "Requesting eBird\nDays=" + daysBack;
                 WatchUi.requestUpdate();
                 return;
             }
             var speciesCodes = [];
             currentBirds =removeDuplicates(json);
             for (var i = 0; i < currentBirds.size(); i++) {
-                //var birdName = currentBirds[i]["comName"];
                 var speciesCode = currentBirds[i]["speciesCode"];
-                //var location = currentBirds[i]["locName"];
-                //var obsDate = currentBirds[i]["obsDt"];
-                //var count = currentBirds[i]["howMany"];
                 speciesCodes.add(speciesCode);
-                //System.println(birdName + "(" + count + ") at " + location + " [" + obsDate + "]");
             }
             requestTaxonomy(speciesCodes);
             statusText = "Requesting Taxonomy...";
@@ -363,23 +336,27 @@ class garminbirdingView extends WatchUi.View {
     // callback for ebird taxonomy request
     function onReceiveTaxonomy(responseCode, json) {
         System.println("taxonomy response:" + responseCode);
-        if (responseCode == 200) {
+        if (responseCode == Comm.NETWORK_RESPONSE_TOO_LARGE ||
+                Comm has :NETWORK_RESPONSE_OUT_OF_MEMORY && responseCode == Comm.NETWORK_RESPONSE_OUT_OF_MEMORY) {
+            statusText = "Too many results\nReduce radius/days";
+        } else if (responseCode == 200) {
             if (json.size() != currentBirds.size()) {
                 System.println("Unexpected count of taxonomy:" + json.size() + " != " + currentBirds.size());
-                return;
-            }
-            for (var i = 0; i < json.size(); i++) {
-                if (json[i].hasKey("familyComName")) {
-                    currentBirds[i]["family"] = json[i]["familyComName"];
-                } else {
-                    currentBirds[i]["family"] = "Unknown";
+                statusText = "Taxonomy Error\nOops...";
+            } else {
+                for (var i = 0; i < json.size(); i++) {
+                    if (json[i].hasKey("familyComName")) {
+                        currentBirds[i]["family"] = json[i]["familyComName"];
+                    } else {
+                        currentBirds[i]["family"] = "Unknown";
+                    }
+                    //System.println(currentBirds[i]["comName"] + "(" + currentBirds[i]["family"] + ")");
                 }
-                //System.println(currentBirds[i]["comName"] + "(" + currentBirds[i]["family"] + ")");
+                var taxonomy = createTaxonomy();
+                speciesCount = currentBirds.size();
+                currentBirds = []; // clear memory
+                paginate(taxonomy);
             }
-            var taxonomy = createTaxonomy();
-            speciesCount = currentBirds.size();
-            currentBirds = []; // clear memory
-            paginate(taxonomy);
         } else {
             statusText = "Error " + responseCode;
         }
@@ -390,14 +367,15 @@ class garminbirdingView extends WatchUi.View {
         screenHeight = dc.getHeight();
         screenWidth = dc.getWidth();
         screenShape = System.getDeviceSettings().screenShape;
-        font = Application.getApp().getProperty("fontSize");
-        textHeight = dc.getFontHeight(font);
+        searchRadius = Application.getApp().getProperty("searchRadius");
+        daysBack = Application.getApp().getProperty("daysBack");
         System.println("onLayout(): text height:" + textHeight);
     }
 
     function onUpdate(dc) {
         font = Application.getApp().getProperty("fontSize");
         textHeight = dc.getFontHeight(font);
+
         View.onUpdate(dc);
         dc.setColor(Graphics.COLOR_TRANSPARENT, Graphics.COLOR_BLACK);
         dc.clear();
@@ -458,10 +436,10 @@ class garminbirdingView extends WatchUi.View {
         var y = startOffset + textHeight + squeezedTextHeight;
         dc.drawLine(0, y, screenWidth, y);
 
-        // detials title
+        // titles
         dc.setColor(0xbdffc9, Graphics.COLOR_TRANSPARENT);
         dc.drawText(screenWidth/2, y + textHeight * 0, font, "Scientific Name", Graphics.TEXT_JUSTIFY_CENTER);
-        dc.drawText(screenWidth/2, y + textHeight * 2, font, "Last Observed", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(screenWidth/2, y + textHeight * 2, font, "Observed Date/Count", Graphics.TEXT_JUSTIFY_CENTER);
         var locTitle = "Location";
         if (bird.hasKey("d")) {
             locTitle += " (" + bird["d"].format("%.1f") + "km)";
@@ -470,25 +448,22 @@ class garminbirdingView extends WatchUi.View {
         if (y + textHeight * 8 < screenHeight) {
             dc.drawText(screenWidth/2, y + textHeight * 6, font, "Count", Graphics.TEXT_JUSTIFY_CENTER);
         }
-        // details content
+        // content
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         if (dc.getTextWidthInPixels(bird["sci"], font) > getScreenWidthAtY(y + textHeight * 1)) {
             dc.drawText(screenWidth/2, y + textHeight * 1, Graphics.FONT_XTINY, bird["sci"], Graphics.TEXT_JUSTIFY_CENTER);
         } else {
             dc.drawText(screenWidth/2, y + textHeight * 1, font, bird["sci"], Graphics.TEXT_JUSTIFY_CENTER);
         }
-        dc.drawText(screenWidth/2, y + textHeight * 3, font, bird["dt"], Graphics.TEXT_JUSTIFY_CENTER);
+        var birdCount = bird["ct"];
+        if (birdCount == null) {
+            birdCount = "N/A";
+        }
+        dc.drawText(screenWidth/2, y + textHeight * 3, font, bird["dt"].substring(0, 11) + ", " + birdCount, Graphics.TEXT_JUSTIFY_CENTER);
         if (dc.getTextWidthInPixels(bird["loc"], font) > getScreenWidthAtY(y + textHeight * 5)) {
             dc.drawText(screenWidth/2, y + textHeight * 5, Graphics.FONT_XTINY, splitString(bird["loc"]), Graphics.TEXT_JUSTIFY_CENTER);
         } else {
             dc.drawText(screenWidth/2, y + textHeight * 5, font, bird["loc"], Graphics.TEXT_JUSTIFY_CENTER);
-        }
-        if (y + textHeight * 8 < screenHeight) {
-            if (bird["ct"] == null) {
-                dc.drawText(screenWidth/2, y + textHeight * 7, font, "Not available", Graphics.TEXT_JUSTIFY_CENTER);
-            } else {
-                dc.drawText(screenWidth/2, y + textHeight * 7, font, bird["ct"], Graphics.TEXT_JUSTIFY_CENTER);
-            }
         }
     }
 
@@ -691,8 +666,8 @@ class garminbirdingView extends WatchUi.View {
         Storage.setValue("longitude", lon);
         Storage.setValue("locationUpdateTime", Time.now().value());
         System.println("Got GPS Location: Latitude: " + myLocation[0] + ", Longitude: " + myLocation[1] + ". Requesting eBird...");
-        requestRecentObs(Application.getApp().getProperty("searchRadius"), -1, Application.getApp().getProperty("daysBack"), false);
-        statusText = "Requesting eBird...";
+        requestRecentObs(Application.getApp().getProperty("searchRadius"), Application.getApp().getProperty("daysBack"), false);
+        statusText = "Requesting eBird...\nRadius=" + Application.getApp().getProperty("searchRadius") + "km Days=" + Application.getApp().getProperty("daysBack");
         WatchUi.requestUpdate();
     }
 
@@ -772,8 +747,8 @@ class garminbirdingView extends WatchUi.View {
                 } else {
                     System.println("Requesting ebird...");
                     clearFetchedData();
-                    requestRecentObs(Application.getApp().getProperty("searchRadius"), -1, Application.getApp().getProperty("daysBack"), false);
-                    statusText = "Requesting eBird...";
+                    requestRecentObs(Application.getApp().getProperty("searchRadius"), Application.getApp().getProperty("daysBack"), false);
+                    statusText = "Requesting eBird...\nRadius=" + Application.getApp().getProperty("searchRadius") + "km Days=" + Application.getApp().getProperty("daysBack");
                     WatchUi.requestUpdate();
                 }
             }
@@ -799,8 +774,6 @@ class garminbirdingView extends WatchUi.View {
     // loading resources into memory.
     function onShow() {
         System.println("onShow()");
-        searchRadius = Application.getApp().getProperty("searchRadius");
-        daysBack = Application.getApp().getProperty("daysBack");
         onTimer();
     }
 
