@@ -186,16 +186,12 @@ class garminbirdingView extends WatchUi.View {
             System.println("Distance should be 0-50");
             return;
         }
-        if (count > 10000) {
-            System.println("MaxResults should be 1-10000");
-            return;
-        }
         if (back < 1 || back > 30) {
             System.println("back should be 1-30");
             return;
         }
         var locale = getLocale();
-        System.println("Requesting eBird (" + locale + ") with radius=" + dist + "km,daysBack=" + back + ",limit_result=" + count + ",notable_only=" + notable);
+        System.println("Requesting eBird (" + locale + ") with radius=" + dist + "km,daysBack=" + back + ",notable_only=" + notable);
         birdReady = false;
         // invalidate saved content
         Storage.setValue("pageContentLastUpdate", 0);
