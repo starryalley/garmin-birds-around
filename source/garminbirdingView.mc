@@ -3,7 +3,6 @@ using Toybox.Communications as Comm;
 using Toybox.Time;
 using Toybox.Timer;
 using Toybox.Math;
-using Toybox.Position;
 using Toybox.Application.Storage; // CIQ 2.4
 
 (:glance)
@@ -16,7 +15,6 @@ class garminbirdingView extends WatchUi.View {
     hidden var locationTimer;
     hidden var lon = null;
     hidden var lat = null;
-    hidden var hotspotLocation; // current selected bird's hotspot location as Position.Location object
     hidden var locationLastUpdatedAt = 0;
     hidden var textHeight = 20;
     hidden var screenHeight;
@@ -453,7 +451,11 @@ class garminbirdingView extends WatchUi.View {
         } else {
             dc.drawText(screenWidth/2, y + textHeight * 1, font, bird["sci"], Graphics.TEXT_JUSTIFY_CENTER);
         }
-        dc.drawText(screenWidth/2, y + textHeight * 3, font, bird["dt_ct"], Graphics.TEXT_JUSTIFY_CENTER);
+        var birdCount = bird["ct"];
+        if (birdCount == null) {
+            birdCount = "N/A";
+        }
+        dc.drawText(screenWidth/2, y + textHeight * 3, font, bird["dt"].substring(0, 11) + ", " + birdCount, Graphics.TEXT_JUSTIFY_CENTER);
         if (dc.getTextWidthInPixels(bird["loc"], font) > getScreenWidthAtY(y + textHeight * 5)) {
             dc.drawText(screenWidth/2, y + textHeight * 5, Graphics.FONT_XTINY, splitString(bird["loc"]), Graphics.TEXT_JUSTIFY_CENTER);
         } else {
@@ -560,18 +562,13 @@ class garminbirdingView extends WatchUi.View {
                     j -= 1; // repeat the last one the new page
                     continue;
                 }
-                var birdCount = bird["howMany"];
-                if (birdCount == null) {
-                    birdCount = "N/A";
-                }
-                System.println("=> pos:" + (bird["lat"].toString() + ", " + bird["lng"].toString()));
                 currentPageContent.add({
                     "name" => bird["comName"],
                     //"fam" => false, // reducing memory, not adding this key
                     "loc" => bird["locName"],
-                    "dt_ct" => bird["obsDt"].substring(0, 11) + ", " + birdCount, //observed date + count
+                    "dt" => bird["obsDt"],
                     "sci" => bird["sciName"],
-                    "pos" => bird["lat"].toString() + "," + bird["lng"].toString(),
+                    "ct" => bird["howMany"],
                     "d" => getDistanceTo(bird["lat"], bird["lng"]), //distance to current location
                 });
             }
@@ -603,24 +600,6 @@ class garminbirdingView extends WatchUi.View {
         }
     }
 
-    // update hotspotLocation based on current selection
-    function _updateCurrentHotspot() {
-        // update current hotspot location
-        if (pageContents[page][selected].hasKey("pos")) {
-            var posStr = pageContents[page][selected]["pos"];
-            var r = posStr.find(",");
-            if (r != null) {
-                var lat = posStr.substring(0, r);
-                var lon = posStr.substring(r+1, posStr.length());
-                hotspotLocation = new Position.Location({
-                    :latitude => lat.toFloat(),
-                    :longitude => lon.toFloat(),
-                    :format => :degrees,
-                });
-            }
-        }
-    }
-
     function _incrementSelection() {
         if (selected == pageContents[page].size() - 1) {
             selected = 0;
@@ -631,7 +610,6 @@ class garminbirdingView extends WatchUi.View {
         if (pageContents[page][selected].hasKey("fam") && pageContents[page][selected]["fam"]) {
             _incrementSelection();
         }
-        _updateCurrentHotspot();
     }
 
     function _decrementSelection() {
@@ -645,7 +623,6 @@ class garminbirdingView extends WatchUi.View {
         if (pageContents[page][selected].hasKey("fam") && pageContents[page][selected]["fam"]) {
             _decrementSelection();
         }
-        _updateCurrentHotspot();
     }
 
     function prevPage() {
@@ -718,23 +695,6 @@ class garminbirdingView extends WatchUi.View {
     }
 
     function select() {
-        // showing map view
-        if (detailMode == true && WatchUi has :MapView && WatchUi.MapView has :initialize) {
-            if (hotspotLocation != null) {
-                var loc = pageContents[page][selected]["loc"];
-                if (loc == null) {
-                    loc = "Hotspot";
-                }
-                var dist = pageContents[page][selected]["d"];
-                if (dist == null) {
-                    dist = searchRadius;
-                }
-
-                var map = new HotspotMapView(lat, lon, Math.ceil(dist), hotspotLocation, pageContents[page][selected]["loc"], screenWidth, screenHeight);
-                WatchUi.pushView(map, null, WatchUi.SLIDE_LEFT);
-                return;
-            }
-        }
         if (selectMode) {
             detailMode = true;
             WatchUi.requestUpdate();
