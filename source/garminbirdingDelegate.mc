@@ -4,16 +4,10 @@ using Toybox.System as Sys;
 (:glance)
 class garminbirdingInputDelegate extends Ui.BehaviorDelegate {
     hidden var view;
-    hidden var isVA4 = false;
 
     function initialize(v) {
         Ui.BehaviorDelegate.initialize();
         view = v;
-        var dev = Sys.getDeviceSettings();
-        if (dev.partNumber.equals("006-B3224-00") || dev.partNumber.equals("006-B3225-00")) {
-            isVA4 = true;
-            Sys.println("using VA4");
-        }
     }
 
     function onNextPage() {
@@ -30,11 +24,7 @@ class garminbirdingInputDelegate extends Ui.BehaviorDelegate {
 
     function onMenu() {
         Sys.println("onMenu()");
-        if (isVA4) {
-            view.select();
-        } else {
-            view.requestNewLocation();
-        }
+        view.requestNewLocation();
         return true;
     }
 
@@ -45,28 +35,8 @@ class garminbirdingInputDelegate extends Ui.BehaviorDelegate {
 
     function onSelect() {
         Sys.println("onSelect()");
-        if (isVA4) {
-            view.nextPage();
-        } else {
-            view.select();
-        }
+        view.select();
         return true;
     }
-
-    /*
-    function onSwipe(evt) {
-        var dir=evt.getDirection();
-        Sys.println("swipe: "+dir);
-        if(dir == Ui.SWIPE_UP) {
-            view.nextPage();
-            return true;
-        }
-        if(dir == Ui.SWIPE_DOWN) {
-            view.prevPage();
-            return true;
-        }
-        return false;
-    }
-    */
 }
 
